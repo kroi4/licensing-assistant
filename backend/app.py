@@ -219,7 +219,7 @@ def evaluate_restaurant(payload: Dict[str, Any]) -> Dict[str, Any]:
         "checklist": matched_rules
     }
 
-    # 4. הפקת דו"ח AI (אופציונלי)
+    # 4. הפקת דו"ח AI
     try:
         ai_report = generate_ai_report(payload, matched_rules)
         result['ai_report'] = ai_report

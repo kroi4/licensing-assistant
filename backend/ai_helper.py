@@ -7,7 +7,7 @@ from typing import Dict, List, Any
 # טעינת משתני הסביבה מקובץ .env
 load_dotenv()
 
-# יצירת לקוח OpenAI - גרסה ישנה
+# יצירת לקוח OpenAI
 openai.api_key = os.getenv('OPENAI_API_KEY')
 
 
@@ -187,7 +187,6 @@ def generate_ai_report(business_data: Dict[str, Any], matching_rules: List[Dict[
     
     try:
         print("Starting AI report generation...")
-        print(f"API Key exists: {bool(api_key)}")
         
         # יצירת רשימת דרישות מפורטת
         rules_text = "\n".join([
