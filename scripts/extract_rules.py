@@ -17,8 +17,9 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 # File paths
-INPUT_DOCX = Path("data/18-07-2022_4.2A.docx")
-OUTPUT_JSON = Path("backend/rules/restaurant_rules.json")
+INPUT_DOCX = Path("data/raw/18-07-2022_4.2A.docx")
+OUTPUT_PROCESSED = Path("data/processed/restaurant_rules.json")
+OUTPUT_BACKEND = Path("backend/rules/restaurant_rules.json")
 
 def extract_sections_from_docx(docx_path: Path) -> List[Dict[str, Any]]:
     """
@@ -69,7 +70,7 @@ def extract_sections_from_docx(docx_path: Path) -> List[Dict[str, Any]]:
         logger.error(f"Error reading document: {e}")
         return []
 
-def create_curated_rules() -> List[Dict[str, Any]]:
+def create_curated_rules(document_analysis: Dict[str, Any] = None) -> List[Dict[str, Any]]:
     """
     Create a curated list of restaurant licensing rules
     
@@ -234,32 +235,104 @@ def calculate_file_hash(file_path: Path) -> str:
         logger.error(f"Error calculating hash for {file_path}: {e}")
         return "unknown"
 
+def write_rules_to_files(rules: List[Dict[str, Any]]) -> bool:
+    """Write rules to both processed and backend locations"""
+    success = True
+    
+    for output_path in [OUTPUT_PROCESSED, OUTPUT_BACKEND]:
+        try:
+            # Ensure output directory exists
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            
+            # Write rules to JSON file
+            with open(output_path, 'w', encoding='utf-8') as f:
+                json.dump(rules, f, ensure_ascii=False, indent=2)
+            logger.info(f"Successfully wrote {len(rules)} rules to {output_path}")
+            
+        except Exception as e:
+            logger.error(f"Error writing JSON file {output_path}: {e}")
+            success = False
+    
+    return success
+
+def analyze_document_structure(sections: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """Analyze the document structure to understand content"""
+    analysis = {
+        "total_sections": len(sections),
+        "sections_with_headings": 0,
+        "chapter_headings": [],
+        "key_terms_found": {}
+    }
+    
+    # Key terms we're looking for in the regulatory document
+    key_terms = {
+        "משרד הבריאות": 0,
+        "משטרת ישראל": 0,
+        "כבאות והצלה": 0,
+        "שליחת מזון": 0,
+        "קירור": 0,
+        "אחסון": 0,
+        "גז": 0,
+        "מנדפים": 0,
+        "אלכוהול": 0,
+        "תצהיר": 0,
+        "מסלול מלא": 0
+    }
+    
+    for section in sections:
+        if section.get("heading"):
+            analysis["sections_with_headings"] += 1
+            heading = section["heading"]
+            
+            # Check if this looks like a chapter heading
+            if any(word in heading for word in ["פרק", "נספח", "מבוא"]):
+                analysis["chapter_headings"].append(heading)
+            
+            # Count key terms in headings and paragraphs
+            all_text = heading + " " + " ".join(section.get("paragraphs", []))
+            for term in key_terms:
+                if term in all_text:
+                    key_terms[term] += 1
+    
+    analysis["key_terms_found"] = key_terms
+    return analysis
+
 def main():
     """Main ETL process"""
     logger.info("Starting ETL process: Word document → JSON rules")
+    logger.info("="*60)
     
-    # Extract sections from document (for metadata/validation)
+    # Extract sections from document
     sections = []
+    document_analysis = {}
+    
     if INPUT_DOCX.exists():
         logger.info(f"Processing document: {INPUT_DOCX}")
         sections = extract_sections_from_docx(INPUT_DOCX)
+        
+        if sections:
+            document_analysis = analyze_document_structure(sections)
+            logger.info(f"Document analysis:")
+            logger.info(f"  - Total sections: {document_analysis['total_sections']}")
+            logger.info(f"  - Sections with headings: {document_analysis['sections_with_headings']}")
+            logger.info(f"  - Chapter headings found: {len(document_analysis['chapter_headings'])}")
+            
+            # Log key terms found
+            key_terms = document_analysis['key_terms_found']
+            relevant_terms = {k: v for k, v in key_terms.items() if v > 0}
+            if relevant_terms:
+                logger.info(f"  - Key regulatory terms found: {relevant_terms}")
+        else:
+            logger.warning("No sections extracted from document")
     else:
         logger.warning(f"Input document not found: {INPUT_DOCX}")
         logger.info("Proceeding with curated rules only")
     
-    # Generate curated rules
-    rules = create_curated_rules()
+    # Generate curated rules (enhanced with document insights)
+    rules = create_curated_rules(document_analysis=document_analysis)
     
-    # Ensure output directory exists
-    OUTPUT_JSON.parent.mkdir(parents=True, exist_ok=True)
-    
-    # Write rules to JSON file
-    try:
-        with open(OUTPUT_JSON, 'w', encoding='utf-8') as f:
-            json.dump(rules, f, ensure_ascii=False, indent=2)
-        logger.info(f"Successfully wrote {len(rules)} rules to {OUTPUT_JSON}")
-    except Exception as e:
-        logger.error(f"Error writing JSON file: {e}")
+    # Write rules to both locations
+    if not write_rules_to_files(rules):
         return False
     
     # Generate and display metadata
@@ -269,8 +342,11 @@ def main():
         "source_sha256": calculate_file_hash(INPUT_DOCX) if INPUT_DOCX.exists() else "file_not_found",
         "rule_count": len(rules),
         "detected_sections": len([s for s in sections if s.get("heading")]),
-        "output_file": str(OUTPUT_JSON),
-        "output_size_bytes": OUTPUT_JSON.stat().st_size if OUTPUT_JSON.exists() else 0
+        "chapter_headings": len(document_analysis.get("chapter_headings", [])),
+        "output_processed": str(OUTPUT_PROCESSED),
+        "output_backend": str(OUTPUT_BACKEND),
+        "processed_size_bytes": OUTPUT_PROCESSED.stat().st_size if OUTPUT_PROCESSED.exists() else 0,
+        "backend_size_bytes": OUTPUT_BACKEND.stat().st_size if OUTPUT_BACKEND.exists() else 0
     }
     
     print("\n" + "="*60)
@@ -280,6 +356,15 @@ def main():
         print(f"{key:20}: {value}")
     print("="*60)
     
+    # Show sample of chapter headings if found
+    if document_analysis.get("chapter_headings"):
+        print("\nSample chapter headings found:")
+        for i, heading in enumerate(document_analysis["chapter_headings"][:5]):
+            print(f"  {i+1}. {heading}")
+        if len(document_analysis["chapter_headings"]) > 5:
+            print(f"  ... and {len(document_analysis['chapter_headings']) - 5} more")
+    
+    print("="*60)
     return True
 
 if __name__ == "__main__":

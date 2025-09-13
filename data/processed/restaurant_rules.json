@@ -1,0 +1,173 @@
+[
+  {
+    "id": "health-baseline",
+    "category": "משרד הבריאות",
+    "title": "עמידה בתנאי תברואה לבתי אוכל + מי שתייה ושפכים",
+    "status": "חובה",
+    "note": "תקנות בתי אוכל, איכות מי שתייה, מניעת עישון ושילוט.",
+    "section_ref": "בריאות – תנאים רוחביים",
+    "if": {}
+  },
+  {
+    "id": "health-smoking-signage",
+    "category": "משרד הבריאות",
+    "title": "שילוט איסור עישון והפרדה אזורי עישון (אם יש)",
+    "status": "חובה",
+    "note": "חוק למניעת העישון ותקנות שילוט.",
+    "section_ref": "",
+    "if": {}
+  },
+  {
+    "id": "delivery-rules",
+    "category": "משרד הבריאות — שליחת מזון",
+    "title": "דרישות לשליחת מזון",
+    "status": "חובה",
+    "note": "אזור ייעודי, קירור/הקפאה, בקרה ותיעוד טמפרטורות, ציוד אריזה, והובלה עד 3 שעות.",
+    "section_ref": "",
+    "if": {
+      "features_any": [
+        "delivery"
+      ]
+    }
+  },
+  {
+    "id": "post-cook-cooling",
+    "category": "משרד הבריאות — קירור לאחר בישול",
+    "title": "קירור מהיר/בקרת טמפרטורות/תיעוד",
+    "status": "חובה",
+    "note": "כשמבשלים ליום המחרת - דורש קירור מהיר",
+    "section_ref": "אחסון וקירור",
+    "if": {
+      "features_any": [
+        "cook_next_day"
+      ]
+    }
+  },
+  {
+    "id": "vet-approval-meat-fish",
+    "category": "משרד הבריאות",
+    "title": "אישורים וטרינריים לבשר/דגים ותיעוד ספקים",
+    "status": "חובה",
+    "note": "",
+    "section_ref": "קבלת/אחסון/הכנה",
+    "if": {
+      "features_any": [
+        "meat_and_fish",
+        "meat"
+      ]
+    }
+  },
+  {
+    "id": "storage-separation",
+    "category": "משרד הבריאות",
+    "title": "הפרדה באחסון (בשר/דגים; גולמי/מוכן)",
+    "status": "חובה",
+    "note": "",
+    "section_ref": "קבלת/אחסון/הכנה",
+    "if": {
+      "features_any": [
+        "meat_and_fish",
+        "meat"
+      ]
+    }
+  },
+  {
+    "id": "prep-surfaces-separated",
+    "category": "משרד הבריאות",
+    "title": "משטחי עבודה נפרדים Raw/RTE",
+    "status": "חובה",
+    "note": "",
+    "section_ref": "קבלת/אחסון/הכנה",
+    "if": {
+      "features_any": [
+        "meat_and_fish",
+        "meat"
+      ]
+    }
+  },
+  {
+    "id": "gas-cert",
+    "category": "גז (גפ\"מ)",
+    "title": "אישור מתקין גפ\"מ ועמידה בת\"י 158",
+    "status": "חובה",
+    "note": "בדיקות תקינות, ניתוקי חירום, תחזוקה שוטפת.",
+    "section_ref": "",
+    "if": {
+      "features_any": [
+        "gas"
+      ]
+    }
+  },
+  {
+    "id": "hood-suppression",
+    "category": "כבאות – מנדפים",
+    "title": "מערכת כיבוי למנדפים במטבח מקצועי",
+    "status": "חובה",
+    "note": "מערכת כימיקלים רטובים/לפי ת\"י 5356-2 + ניתוק אנרגיה.",
+    "section_ref": "",
+    "if": {
+      "features_any": [
+        "gas",
+        "hood"
+      ]
+    }
+  },
+  {
+    "id": "fire-affidavit",
+    "category": "כבאות והצלה (תצהיר)",
+    "title": "מסלול תצהיר – עד 50 איש ועד 150 מ״ר",
+    "status": "חובה",
+    "note": "עמידה בדרישות פרק 5 – שילוט יציאות, תאורת חירום, מטפים וכו'.",
+    "section_ref": "",
+    "if": {
+      "area_max": 150,
+      "seats_max": 50
+    }
+  },
+  {
+    "id": "fire-full-area",
+    "category": "כבאות והצלה",
+    "title": "מסלול מלא – שטח מעל 150 מ״ר",
+    "status": "חובה",
+    "note": "דרכי מוצא, עמדות כיבוי, תאורת חירום, ייתכן מתזים/גילוי עשן לפי ספים.",
+    "section_ref": "",
+    "if": {
+      "area_min": 151
+    }
+  },
+  {
+    "id": "fire-full-seats",
+    "category": "כבאות והצלה",
+    "title": "מסלול מלא – תפוסה מעל 50",
+    "status": "חובה",
+    "note": "דרכי מוצא, עמדות כיבוי, תאורת חירום, ייתכן מתזים/גילוי עשן לפי ספים.",
+    "section_ref": "",
+    "if": {
+      "seats_min": 51
+    }
+  },
+  {
+    "id": "police-alcohol",
+    "category": "משטרת ישראל",
+    "title": "דרישות משטרה עקב הגשת/מכירת אלכוהול",
+    "status": "חובה",
+    "note": "טמ״ס, תאורה חיצונית, שילוט איסור מכירה <18, החזקת הקלטות 14 יום וכו'.",
+    "section_ref": "",
+    "if": {
+      "features_any": [
+        "alcohol"
+      ]
+    }
+  },
+  {
+    "id": "police-capacity",
+    "category": "משטרת ישראל",
+    "title": "דרישות משטרה עקב תפוסה מעל 200",
+    "status": "חובה",
+    "note": "דרישות נוספות לעסקים עם תפוסה גדולה.",
+    "section_ref": "",
+    "if": {
+      "seats_min": 201
+    }
+  }
+]
