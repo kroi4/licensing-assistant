@@ -1,6 +1,5 @@
-// Constants
-const API_BASE_URL = 'http://localhost:8000';
-const ASSES_API = 'api/assess';
+// Application will use ApiService from service.js
+// Configuration is loaded from clinet_config
 
 // DOM Elements
 const form = document.getElementById('businessForm');
@@ -48,32 +47,18 @@ async function handleFormSubmit(event) {
     hideError();
     
     try {
-        // Send request to API
-        const response = await fetch(`${API_BASE_URL}/${ASSES_API}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(formData)
-        });
-        
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || `שגיאת שרת: ${response.status}`);
+        // Check if ApiService is available
+        if (!window.ApiService) {
+            throw new Error('שירות ה-API לא זמין. אנא רענן את הדף.');
         }
         
-        const result = await response.json();
+        // Use the API service layer
+        const result = await window.ApiService.assessBusiness(formData);
         displayResults(result);
         
     } catch (error) {
         console.error('Error:', error);
-        
-        // Check if it's a network error
-        if (error.name === 'TypeError' && error.message.includes('fetch')) {
-            displayError('לא ניתן להתחבר לשרת. אנא וודא שהשרת פועל על http://localhost:8000');
-        } else {
-            displayError(error.message);
-        }
+        displayError(error.message);
     } finally {
         setLoadingState(false);
     }
