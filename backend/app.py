@@ -1,5 +1,6 @@
 # backend/app.py
 import os
+import json
 from typing import Dict, Any, List
 from flask import Flask, request, jsonify
 from flask_cors import CORS
@@ -14,7 +15,32 @@ CORS(app, origins="*", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"], allo
 # features אפשריים: "gas", "delivery", "alcohol", "hood"
 # area (float > 0), seats (int >= 0)
 
-RESTAURANT_RULES: List[Dict[str, Any]] = [
+# Global variable to hold restaurant rules
+RESTAURANT_RULES: List[Dict[str, Any]] = []
+
+def load_restaurant_rules():
+    """Load restaurant rules from JSON file"""
+    global RESTAURANT_RULES
+    
+    # Path to rules file
+    rules_path = os.path.join(os.path.dirname(__file__), "rules", "restaurant_rules.json")
+    
+    try:
+        if os.path.exists(rules_path):
+            with open(rules_path, 'r', encoding='utf-8') as f:
+                RESTAURANT_RULES = json.load(f)
+            print(f"Loaded {len(RESTAURANT_RULES)} rules from {rules_path}")
+        else:
+            print(f"Rules file not found at {rules_path}, using fallback rules")
+            RESTAURANT_RULES = get_fallback_rules()
+    except Exception as e:
+        print(f"Error loading rules from {rules_path}: {e}")
+        print("Using fallback rules")
+        RESTAURANT_RULES = get_fallback_rules()
+
+def get_fallback_rules():
+    """Fallback rules in case JSON file is not available"""
+    return [
     # משרד הבריאות – בסיס
     {
         "id": "health-baseline",
@@ -108,6 +134,9 @@ RESTAURANT_RULES: List[Dict[str, Any]] = [
         "if": {"features_any": ["gas", "hood"]}
     }
 ]
+
+# Load rules on startup
+load_restaurant_rules()
 
 def translate_features(features: List[str]) -> List[str]:
     """תרגום מאפיינים מאנגלית לעברית"""
@@ -232,6 +261,31 @@ def assess():
     except Exception as e:
         print(f"Error in assess endpoint: {str(e)}")
         return jsonify({"error": f"שגיאה בעיבוד הבקשה: {str(e)}"}), 500
+
+@app.post("/api/reload-rules")
+def reload_rules():
+    """Reload rules from JSON file (development endpoint)"""
+    try:
+        load_restaurant_rules()
+        return jsonify({
+            "ok": True, 
+            "message": "Rules reloaded successfully",
+            "count": len(RESTAURANT_RULES)
+        })
+    except Exception as e:
+        print(f"Error reloading rules: {str(e)}")
+        return jsonify({
+            "ok": False,
+            "error": f"Failed to reload rules: {str(e)}"
+        }), 500
+
+@app.get("/api/rules")
+def get_rules():
+    """Get current rules (development endpoint)"""
+    return jsonify({
+        "count": len(RESTAURANT_RULES),
+        "rules": RESTAURANT_RULES
+    })
 
 if __name__ == '__main__':
     app.run(port=8000, debug=True)
