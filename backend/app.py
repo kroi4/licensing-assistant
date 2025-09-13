@@ -7,7 +7,8 @@ from ai_helper import generate_ai_report
 
 app = Flask(__name__)
 app.config['JSON_AS_ASCII'] = False
-CORS(app, resources={r"/*": {"origins": ["http://localhost:3000","http://127.0.0.1:3000","http://localhost:5173","http://127.0.0.1:5173","file://*"]}})
+# Configure CORS to allow all origins (for development)
+CORS(app, origins="*", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"], allow_headers=["Content-Type", "Authorization"])
 
 # --- כללי: מאפייני קלט נתמכים ---
 # features אפשריים: "gas", "delivery", "alcohol", "hood"
@@ -108,6 +109,16 @@ RESTAURANT_RULES: List[Dict[str, Any]] = [
     }
 ]
 
+def translate_features(features: List[str]) -> List[str]:
+    """תרגום מאפיינים מאנגלית לעברית"""
+    feature_translations = {
+        "gas": "שימוש בגז",
+        "delivery": "שירות משלוחים", 
+        "alcohol": "הגשת אלכוהול",
+        "hood": "מנדף מטבח מקצועי"
+    }
+    return [feature_translations.get(feature, feature) for feature in features]
+
 def rule_matches(cond: Dict[str, Any], payload: Dict[str, Any]) -> bool:
     area = payload.get("area")
     seats = payload.get("seats")
@@ -160,7 +171,7 @@ def evaluate_restaurant(payload: Dict[str, Any]) -> Dict[str, Any]:
         "type": "restaurant",
         "area": area,
         "seats": seats,
-        "features": list(features),
+        "features": translate_features(list(features)),
         "police": police_note,
         "fire_track": fire_track
     }
@@ -202,16 +213,25 @@ def health_check():
 
 @app.post("/api/assess")
 def assess():
-    data = request.get_json(silent=True) or {}
-    
-    if not all(k in data for k in ['area', 'seats', 'features']):
-        return jsonify({"error": "חסרים שדות חובה"}), 400
-    
-    result = evaluate_restaurant(data)
-    ai_report = generate_ai_report(data, result['checklist'])
-    result['ai_report'] = ai_report
-    
-    return jsonify(result)
+    try:
+        data = request.get_json(silent=True) or {}
+        
+        if not all(k in data for k in ['area', 'seats', 'features']):
+            return jsonify({"error": "חסרים שדות חובה"}), 400
+        
+        # Log the received data for debugging
+        print(f"Received data: {data}")
+        
+        result = evaluate_restaurant(data)
+        
+        # Log the result for debugging
+        print(f"Evaluation result: {result}")
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        print(f"Error in assess endpoint: {str(e)}")
+        return jsonify({"error": f"שגיאה בעיבוד הבקשה: {str(e)}"}), 500
 
 if __name__ == '__main__':
     app.run(port=8000, debug=True)

@@ -23,8 +23,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Form validation
-function validateInputs(e) {
-    e.preventDefault();
+function validateInputs() {
     const area = parseFloat(document.getElementById('area').value);
     const seats = parseInt(document.getElementById('seats').value);
     
@@ -36,20 +35,19 @@ function validateInputs(e) {
 async function handleFormSubmit(event) {
     event.preventDefault();
     
-    // Show loading state
+    // Early validation before showing loading state
+    const formData = collectFormData();
+    if (!validateFormData(formData)) {
+        displayError('נתונים לא תקינים. אנא בדוק את הקלט.');
+        return;
+    }
+    
+    // Show loading state only after validation passes
     setLoadingState(true);
     hideResults();
     hideError();
     
     try {
-        // Collect form data
-        const formData = collectFormData();
-        
-        // Validate data
-        if (!validateFormData(formData)) {
-            throw new Error('נתונים לא תקינים. אנא בדוק את הקלט.');
-        }
-        
         // Send request to API
         const response = await fetch(`${API_BASE_URL}/${ASSES_API}`, {
             method: 'POST',
@@ -69,15 +67,20 @@ async function handleFormSubmit(event) {
         
     } catch (error) {
         console.error('Error:', error);
-        displayError(error.message);
+        
+        // Check if it's a network error
+        if (error.name === 'TypeError' && error.message.includes('fetch')) {
+            displayError('לא ניתן להתחבר לשרת. אנא וודא שהשרת פועל על http://localhost:8000');
+        } else {
+            displayError(error.message);
+        }
     } finally {
         setLoadingState(false);
     }
 }
 
 // Collect form data
-function collectFormData(e) {
-    e.preventDefault();
+function collectFormData() {
     const area = parseFloat(document.getElementById('area').value);
     const seats = parseInt(document.getElementById('seats').value);
     

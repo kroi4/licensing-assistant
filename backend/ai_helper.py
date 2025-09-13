@@ -11,11 +11,183 @@ load_dotenv()
 openai.api_key = os.getenv('OPENAI_API_KEY')
 
 
+def create_basic_report(business_data: Dict[str, Any], matching_rules: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """יצירת דוח בסיסי מותאם אישית על בסיס הכללים"""
+    
+    area = business_data.get('area', 0)
+    seats = business_data.get('seats', 0)
+    features = business_data.get('features', [])
+    
+    # Determine complexity based on business characteristics
+    complexity = "low"
+    complexity_factors = []
+    
+    if "alcohol" in features:
+        complexity = "high"
+        complexity_factors.append("הגשת אלכוהול")
+    if area > 300 or seats > 100:
+        complexity = "high"
+        complexity_factors.append("גודל העסק")
+    elif area > 150 or seats > 50:
+        complexity = "medium"
+        complexity_factors.append("גודל בינוני")
+    
+    if "delivery" in features:
+        complexity_factors.append("שליחת מזון")
+    if "gas" in features:
+        complexity_factors.append("שימוש בגז")
+    
+    # Estimate time based on complexity and rules
+    time_estimates = {
+        "low": "2-4 שבועות",
+        "medium": "4-8 שבועות", 
+        "high": "8-16 שבועות"
+    }
+    
+    # Generate specific actions based on rules
+    actions = []
+    for rule in matching_rules:
+        priority = "high"
+        cost_range = "₪1,000-3,000"
+        professionals = ["יועץ רישוי"]
+        
+        if "כבאות" in rule['category']:
+            priority = "high"
+            cost_range = "₪2,000-8,000"
+            professionals = ["יועץ בטיחות אש", "מהנדס"]
+        elif "משטרה" in rule['category']:
+            priority = "high" 
+            cost_range = "₪1,500-4,000"
+            professionals = ["יועץ רישוי", "מתכנן אבטחה"]
+        elif "בריאות" in rule['category']:
+            priority = "medium"
+            cost_range = "₪800-2,500"
+            professionals = ["יועץ תברואה"]
+        elif "גז" in rule['category']:
+            priority = "high"
+            cost_range = "₪3,000-10,000"
+            professionals = ["מתקין גפ\"מ מוסמך", "מהנדס"]
+        
+        actions.append({
+            "title": rule['title'],
+            "priority": priority,
+            "category": rule['category'],
+            "based_on_rule_id": rule.get('id', ''),
+            "required_professionals": professionals,
+            "estimated_cost_range": cost_range,
+            "explanation": rule.get('note', '')
+        })
+    
+    # Generate relevant tips based on features
+    tips = []
+    if "delivery" in features:
+        tips.append({
+            "category": "שליחת מזון",
+            "tip": "הכן אזור ייעודי לשליחת מזון עם ציוד קירור מתאים",
+            "benefit": "עמידה בדרישות משרד הבריאות ומניעת קנסות"
+        })
+    
+    if "gas" in features:
+        tips.append({
+            "category": "בטיחות גז",
+            "tip": "בצע בדיקות תקינות גז כל 6 חודשים",
+            "benefit": "מניעת תאונות ועמידה בדרישות החוק"
+        })
+    
+    if area <= 150 and seats <= 50:
+        tips.append({
+            "category": "כבאות",
+            "tip": "אתה זכאי למסלול תצהיר מפושט - נצל את היתרון",
+            "benefit": "חיסכון בזמן ובעלויות בהליך הרישוי"
+        })
+    
+    # Always add general tips
+    tips.extend([
+        {
+            "category": "תכנון",
+            "tip": "התחל בתהליך הרישוי לפני השלמת העבודות",
+            "benefit": "חיסכון בזמן ומניעת עיכובים"
+        },
+        {
+            "category": "תיעוד",
+            "tip": "שמור את כל המסמכים והאישורים במקום נגיש",
+            "benefit": "הקלה בביקורות ובחידוש רישיונות"
+        }
+    ])
+    
+    # Generate potential risks
+    risks = [
+        {
+            "risk_type": "רגולטורי",
+            "description": "עיכובים בקבלת אישורים מהרשויות",
+            "impact": "medium",
+            "mitigation": "התחלה מוקדמת של התהליך ומעקב שוטף"
+        }
+    ]
+    
+    if "gas" in features:
+        risks.append({
+            "risk_type": "בטיחותי",
+            "description": "סיכוני בטיחות הקשורים לשימוש בגז",
+            "impact": "high",
+            "mitigation": "התקנה מקצועית ובדיקות תקופתיות"
+        })
+    
+    if "alcohol" in features:
+        risks.append({
+            "risk_type": "רגולטורי",
+            "description": "דרישות מחמירות של המשטרה להגשת אלכוהול",
+            "impact": "high",
+            "mitigation": "התייעצות עם יועץ מומחה ועמידה קפדנית בדרישות"
+        })
+    
+    # Generate budget planning
+    fixed_costs = ["אגרות רישוי", "בדיקות מקצועיות", "שילוט בטיחות"]
+    recurring_costs = ["חידוש רישיונות", "בדיקות תקופתיות"]
+    optional_costs = ["שדרוגי בטיחות נוספים", "ייעוץ מקצועי מתמשך"]
+    
+    if "gas" in features:
+        fixed_costs.extend(["התקנת מערכת גז", "מערכת כיבוי למנדפים"])
+        recurring_costs.append("בדיקות גז תקופתיות")
+    
+    if "delivery" in features:
+        fixed_costs.extend(["ציוד קירור לשליחות", "אזור אריזה"])
+        recurring_costs.append("תחזוקת ציוד קירור")
+    
+    return {
+        "summary": {
+            "assessment": f"עסק {'קטן' if complexity == 'low' else 'בינוני' if complexity == 'medium' else 'גדול'} בגודל {area} מ\"ר עם {seats} מקומות ישיבה. נדרשת עמידה ב-{len(matching_rules)} דרישות רגולטוריות עיקריות.",
+            "complexity_level": complexity,
+            "estimated_time": time_estimates[complexity],
+            "key_challenges": complexity_factors if complexity_factors else ["עמידה בדרישות בסיסיות"]
+        },
+        "actions": actions,
+        "potential_risks": risks,
+        "tips": tips,
+        "open_questions": [
+            "האם יש דרישות מיוחדות מהרשות המקומית?",
+            "האם העסק ממוקם באזור מוגבל או מיוחד?"
+        ],
+        "budget_planning": {
+            "fixed_costs": fixed_costs,
+            "recurring_costs": recurring_costs,
+            "optional_costs": optional_costs
+        }
+    }
+
+
 def generate_ai_report(business_data: Dict[str, Any], matching_rules: List[Dict[str, Any]]) -> Dict[str, Any]:
     """יצירת דוח AI מותאם אישית עם ניתוח מעמיק ומעשי"""
+    
+    # Check if OpenAI API key is available
+    api_key = os.getenv('OPENAI_API_KEY')
+    if not api_key or api_key == 'your_openai_api_key_here':
+        print("OpenAI API key not configured - returning basic report")
+        return create_basic_report(business_data, matching_rules)
+    
     try:
         print("Starting AI report generation...")
-        print(f"API Key exists: {bool(os.getenv('OPENAI_API_KEY'))}")
+        print(f"API Key exists: {bool(api_key)}")
         
         # יצירת רשימת דרישות מפורטת
         rules_text = "\n".join([
@@ -162,37 +334,6 @@ def generate_ai_report(business_data: Dict[str, Any], matching_rules: List[Dict[
         error_message = str(e)
         print(f"OpenAI API error: {error_message}")
         
-        # ניתוח סוג השגיאה וחזרה עם הודעה מתאימה
-        if "rate limit" in error_message.lower():
-            assessment = "המערכת עמוסה כרגע, נא לנסות שוב בעוד מספר דקות"
-        elif "timeout" in error_message.lower():
-            assessment = "חיבור לשירות ה-AI נכשל עקב תקלת תקשורת"
-        elif "content filter" in error_message.lower():
-            assessment = "לא ניתן לעבד את הבקשה עקב מגבלות תוכן"
-        else:
-            assessment = "אירעה שגיאה בתקשורת עם מערכת ה-AI"
-        
-        return {
-            "summary": {
-                "assessment": assessment,
-                "complexity_level": "unknown",
-                "estimated_time": "לא ניתן להעריך",
-                "key_challenges": ["תקלה בשירות ה-AI"]
-            },
-            "actions": [],
-            "potential_risks": [
-                {
-                    "risk_type": "תפעולי",
-                    "description": "תקלה בשירות הניתוח האוטומטי",
-                    "impact": "medium",
-                    "mitigation": "נא לנסות שוב או לפנות לתמיכה"
-                }
-            ],
-            "tips": [],
-            "open_questions": [f"נא לפנות לתמיכה - {error_message}"],
-            "budget_planning": {
-                "fixed_costs": [],
-                "recurring_costs": [],
-                "optional_costs": []
-            }
-        }
+        # Return the basic report instead of showing technical errors to users
+        print("Falling back to basic report due to AI error")
+        return create_basic_report(business_data, matching_rules)
