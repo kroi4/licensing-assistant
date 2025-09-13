@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>מערכת הערכת רישוי עסקים</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🏪 מערכת הערכת רישוי עסקים</h1>
+            <p>קבל הערכה מותאמת אישית לדרישות הרישוי של המסעדה שלך</p>
+        </header>
+
+        <main>
+            <form id="businessForm" class="form-container">
+                <div class="form-group">
+                    <label for="area">שטח המסעדה (מ"ר):</label>
+                    <input type="number" id="area" name="area" min="1" step="0.1" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="seats">מספר מקומות ישיבה:</label>
+                    <input type="number" id="seats" name="seats" min="0" required>
+                </div>
+
+                <div class="form-group">
+                    <label>מאפיינים מיוחדים:</label>
+                    <div class="checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="features" value="gas">
+                            <span class="checkmark"></span>
+                            שימוש בגז
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="features" value="delivery">
+                            <span class="checkmark"></span>
+                            שירות משלוחים
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="features" value="alcohol">
+                            <span class="checkmark"></span>
+                            הגשת אלכוהול
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="features" value="hood">
+                            <span class="checkmark"></span>
+                            מנדף מטבח מקצועי
+                        </label>
+                    </div>
+                </div>
+
+                <button type="submit" id="submitBtn" class="submit-btn">
+                    <span class="btn-text">קבל הערכת רישוי</span>
+                    <span class="loading-spinner" style="display: none;">⏳ מעבד...</span>
+                </button>
+            </form>
+
+            <div id="results" class="results-container" style="display: none;">
+                <h2>תוצאות הערכת הרישוי</h2>
+                
+                <div id="summary" class="summary-section">
+                    <h3>סיכום כללי</h3>
+                    <div id="summaryContent"></div>
+                </div>
+
+                <div id="checklist" class="checklist-section">
+                    <h3>רשימת דרישות רגולטוריות</h3>
+                    <div id="checklistContent"></div>
+                </div>
+
+                <div id="aiReport" class="ai-report-section">
+                    <h3>🤖 דוח AI מותאם אישית</h3>
+                    <div id="aiReportContent"></div>
+                </div>
+            </div>
+
+            <div id="error" class="error-container" style="display: none;">
+                <h3>❌ שגיאה</h3>
+                <div id="errorContent"></div>
+            </div>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
