@@ -19,6 +19,15 @@ document.addEventListener('DOMContentLoaded', function() {
     
     areaInput.addEventListener('input', validateInputs);
     seatsInput.addEventListener('input', validateInputs);
+
+    // Add event listeners for all feature checkboxes
+    const featureCheckboxes = document.querySelectorAll('input[name="features"]');
+    featureCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', validateInputs);
+    });
+    
+    // Initial validation
+    validateInputs();
 });
 
 // Form validation
@@ -26,7 +35,11 @@ function validateInputs() {
     const area = parseFloat(document.getElementById('area').value);
     const seats = parseInt(document.getElementById('seats').value);
     
-    const isValid = area > 0 && seats >= 0;
+    // Check if at least one feature is selected
+    const selectedFeatures = document.querySelectorAll('input[name="features"]:checked');
+    const hasFeature = selectedFeatures.length > 0;
+    
+    const isValid = area > 0 && seats >= 0 && hasFeature;
     submitBtn.disabled = !isValid;
 }
 

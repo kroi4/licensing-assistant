@@ -12,7 +12,7 @@ app.config['JSON_AS_ASCII'] = False
 CORS(app, origins="*", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"], allow_headers=["Content-Type", "Authorization"])
 
 # --- כללי: מאפייני קלט נתמכים ---
-# features אפשריים: "gas", "delivery", "alcohol", "hood"
+# features אפשריים: "gas", "delivery", "alcohol", "hood", "meat"
 # area (float > 0), seats (int >= 0)
 
 # Global variable to hold restaurant rules
@@ -131,7 +131,15 @@ def get_fallback_rules():
         "title": "מערכת כיבוי למנדפים במטבח מקצועי",
         "status": "חובה",
         "note": "מערכת כימיקלים רטובים/לפי ת״י 5356-2 + ניתוק אנרגיה.",
-        "if": {"features_any": ["gas", "hood"]}
+        "if": {"features_any": ["gas", "hood", "meat"]}
+    },
+    {
+        "id": "meat-handling",
+        "category": "משרד הבריאות",
+        "title": "דרישות טיפול בבשר",
+        "status": "חובה",
+        "note": "הפרדת בשר וחלב, אחסון נפרד, בקרת טמפרטורות.",
+        "if": {"features_any": ["meat"]}
     }
 ]
 
@@ -144,7 +152,8 @@ def translate_features(features: List[str]) -> List[str]:
         "gas": "שימוש בגז",
         "delivery": "שירות משלוחים", 
         "alcohol": "הגשת אלכוהול",
-        "hood": "מנדף מטבח מקצועי"
+        "hood": "מנדף מטבח מקצועי",
+        "meat": "הגשת בשר"
     }
     return [feature_translations.get(feature, feature) for feature in features]
 
@@ -245,8 +254,32 @@ def assess():
     try:
         data = request.get_json(silent=True) or {}
         
+        # Validate required fields exist
         if not all(k in data for k in ['area', 'seats', 'features']):
-            return jsonify({"error": "חסרים שדות חובה"}), 400
+            return jsonify({"error": "חסרים שדות חובה: area, seats, features"}), 400
+        
+        # Validate area and seats are valid numbers
+        try:
+            area = float(data['area'])
+            seats = int(data['seats'])
+            if area <= 0 or seats < 0:
+                return jsonify({"error": "שטח חייב להיות גדול מ-0 ומספר מקומות ישיבה לא יכול להיות שלילי"}), 400
+        except (ValueError, TypeError):
+            return jsonify({"error": "שטח ומספר מקומות ישיבה חייבים להיות מספרים תקינים"}), 400
+        
+        # Validate features
+        features = data.get('features', [])
+        if not isinstance(features, list):
+            return jsonify({"error": "מאפיינים חייבים להיות רשימה"}), 400
+        
+        if not features or len(features) == 0:
+            return jsonify({"error": "חובה לבחור לפחות מאפיין אחד"}), 400
+        
+        # Validate that features are from the allowed list
+        allowed_features = ['gas', 'delivery', 'alcohol', 'hood', 'meat']
+        invalid_features = [f for f in features if f not in allowed_features]
+        if invalid_features:
+            return jsonify({"error": f"מאפיינים לא תקינים: {', '.join(invalid_features)}. מאפיינים מותרים: {', '.join(allowed_features)}"}), 400
         
         # Log the received data for debugging
         print(f"Received data: {data}")
