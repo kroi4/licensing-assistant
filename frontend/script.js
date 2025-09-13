@@ -260,18 +260,29 @@ function displayAIReport(aiReport) {
         `;
     }
     
-    // Budget planning section
-    if (aiReport.budget_planning) {
+    // Budget planning section - show costs from actions and budget planning
+    if ((aiReport.actions && aiReport.actions.length > 0) || aiReport.budget_planning) {
         html += `
             <div class="ai-section">
                 <h4>💰 תכנון תקציב</h4>
-                ${aiReport.budget_planning.fixed_costs && aiReport.budget_planning.fixed_costs.length > 0 ? 
+                
+                ${aiReport.actions && aiReport.actions.length > 0 ? 
+                    `<p><strong>עלויות משוערות לפי פעולות נדרשות:</strong></p>
+                     <ul>
+                        ${aiReport.actions.map(action => 
+                            `<li><strong>${action.title}</strong>: ${action.estimated_cost_range || 'מחיר לא צוין'}</li>`
+                        ).join('')}
+                     </ul>` : ''}
+                
+                ${aiReport.budget_planning && aiReport.budget_planning.fixed_costs && aiReport.budget_planning.fixed_costs.length > 0 ? 
                     `<p><strong>עלויות חד פעמיות:</strong></p>
                      <ul>${aiReport.budget_planning.fixed_costs.map(cost => `<li>${cost}</li>`).join('')}</ul>` : ''}
-                ${aiReport.budget_planning.recurring_costs && aiReport.budget_planning.recurring_costs.length > 0 ? 
+                
+                ${aiReport.budget_planning && aiReport.budget_planning.recurring_costs && aiReport.budget_planning.recurring_costs.length > 0 ? 
                     `<p><strong>עלויות שוטפות:</strong></p>
                      <ul>${aiReport.budget_planning.recurring_costs.map(cost => `<li>${cost}</li>`).join('')}</ul>` : ''}
-                ${aiReport.budget_planning.optional_costs && aiReport.budget_planning.optional_costs.length > 0 ? 
+                
+                ${aiReport.budget_planning && aiReport.budget_planning.optional_costs && aiReport.budget_planning.optional_costs.length > 0 ? 
                     `<p><strong>עלויות אופציונליות:</strong></p>
                      <ul>${aiReport.budget_planning.optional_costs.map(cost => `<li>${cost}</li>`).join('')}</ul>` : ''}
             </div>
