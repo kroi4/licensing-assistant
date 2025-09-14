@@ -44,39 +44,110 @@ def create_basic_report(business_data: Dict[str, Any], matching_rules: List[Dict
         "high": "8-16 שבועות"
     }
     
-    # Generate specific actions based on rules
+    # Generate specific actions based on rules - limit to most important ones
     actions = []
+    
+    # Group rules by category and priority
+    categorized_rules = {}
     for rule in matching_rules:
-        priority = "high"
-        cost_range = "₪1,000-3,000"
-        professionals = ["יועץ רישוי"]
+        category = rule['category']
+        if category not in categorized_rules:
+            categorized_rules[category] = []
+        categorized_rules[category].append(rule)
+    
+    # Select most important rules from each category (limit total to 12 actions max)
+    total_actions_limit = 12
+    actions_per_category = max(1, total_actions_limit // len(categorized_rules)) if categorized_rules else 1
+    
+    for category, rules in categorized_rules.items():
+        # Sort by title length (shorter titles are usually more general/important)
+        sorted_rules = sorted(rules, key=lambda r: len(r['title']))
+        selected_rules = sorted_rules[:actions_per_category]  # Limit per category
         
-        if "כבאות" in rule['category']:
-            priority = "high"
-            cost_range = "₪2,000-8,000"
-            professionals = ["יועץ בטיחות אש", "מהנדס"]
-        elif "משטרה" in rule['category']:
-            priority = "high" 
-            cost_range = "₪1,500-4,000"
-            professionals = ["יועץ רישוי", "מתכנן אבטחה"]
-        elif "בריאות" in rule['category']:
+        for rule in selected_rules:
+            # Skip rules with unclear or incomplete titles
+            if (not rule['title'] or 
+                len(rule['title'].strip()) < 10 or 
+                '_____' in rule['title'] or
+                rule['title'].strip().endswith('.') or
+                rule['title'].startswith('שהוא ו') or
+                'ואחסנה של מזון.' in rule['title']):
+                continue
+                
             priority = "medium"
-            cost_range = "₪800-2,500"
-            professionals = ["יועץ תברואה"]
-        elif "גז" in rule['category']:
-            priority = "high"
-            cost_range = "₪3,000-10,000"
-            professionals = ["מתקין גפ\"מ מוסמך", "מהנדס"]
+            cost_range = "₪500-1,500"
+            professionals = ["יועץ רישוי"]
+            
+            # Set specific costs and professionals based on rule content
+            if "כבאות" in rule['category']:
+                if "מערכת" in rule['title'] or "התקנה" in rule['title']:
+                    priority = "high"
+                    cost_range = "₪3,000-12,000"
+                    professionals = ["יועץ בטיחות אש", "מהנדס", "קבלן מוסמך"]
+                elif "בדיקה" in rule['title'] or "אישור" in rule['title']:
+                    priority = "high"
+                    cost_range = "₪800-2,500"
+                    professionals = ["יועץ בטיחות אש"]
+                else:
+                    priority = "medium"
+                    cost_range = "₪1,200-3,500"
+                    professionals = ["יועץ בטיחות אש"]
+                    
+            elif "משטרה" in rule['category']:
+                if "רישיון" in rule['title']:
+                    priority = "high"
+                    cost_range = "₪300-800"
+                    professionals = ["יועץ רישוי"]
+                elif "בדיקה" in rule['title']:
+                    priority = "medium"
+                    cost_range = "₪200-600"
+                    professionals = ["יועץ רישוי"]
+                else:
+                    priority = "medium"
+                    cost_range = "₪400-1,200"
+                    professionals = ["יועץ רישוי"]
+                    
+            elif "בריאות" in rule['category']:
+                if "מערכת" in rule['title'] or "התקנה" in rule['title']:
+                    priority = "high"
+                    cost_range = "₪1,500-5,000"
+                    professionals = ["יועץ תברואה", "קבלן מוסמך"]
+                elif "בדיקה" in rule['title']:
+                    priority = "medium"
+                    cost_range = "₪400-1,200"
+                    professionals = ["יועץ תברואה"]
+                else:
+                    priority = "medium"
+                    cost_range = "₪600-2,000"
+                    professionals = ["יועץ תברואה"]
+                    
+            elif "גז" in rule['category']:
+                priority = "high"
+                cost_range = "₪4,000-15,000"
+                professionals = ["מתקין גפ\"מ מוסמך", "מהנדס"]
         
-        actions.append({
-            "title": rule['title'],
-            "priority": priority,
-            "category": rule['category'],
-            "based_on_rule_id": rule.get('id', ''),
-            "required_professionals": professionals,
-            "estimated_cost_range": cost_range,
-            "explanation": rule.get('note', '')
-        })
+            # Create user-friendly explanation instead of technical note
+            explanation = ""
+            if "כבאות" in rule['category']:
+                explanation = "דרישה לבטיחות אש והצלה - יש לקבל אישור מרשויות הכיבוי"
+            elif "משטרה" in rule['category']:
+                explanation = "דרישה רגולטורית - יש לקבל אישור ממשטרת ישראל"
+            elif "בריאות" in rule['category']:
+                explanation = "דרישה תברואתית - יש לקבל אישור ממשרד הבריאות"
+            elif "גז" in rule['category']:
+                explanation = "דרישה לבטיחות גז - יש לקבל אישור ממתקין גפ\"מ מוסמך"
+            else:
+                explanation = "דרישה רגולטורית לקבלת רישיון העסק"
+
+            actions.append({
+                "title": rule['title'],
+                "priority": priority,
+                "category": rule['category'],
+                "based_on_rule_id": rule.get('id', ''),
+                "required_professionals": professionals,
+                "estimated_cost_range": cost_range,
+                "explanation": explanation
+            })
     
     # Generate relevant tips based on features
     tips = []
@@ -156,7 +227,7 @@ def create_basic_report(business_data: Dict[str, Any], matching_rules: List[Dict
     
     return {
         "summary": {
-            "assessment": f"עסק {'קטן' if complexity == 'low' else 'בינוני' if complexity == 'medium' else 'גדול'} בגודל {area} מ\"ר עם {seats} מקומות ישיבה. נדרשת עמידה ב-{len(matching_rules)} דרישות רגולטוריות עיקריות.",
+            "assessment": f"עסק {'קטן' if complexity == 'low' else 'בינוני' if complexity == 'medium' else 'גדול'} בגודל {area} מ\"ר עם {seats} מקומות ישיבה. נדרשת עמידה בדרישות רגולטוריות מרכזיות.",
             "complexity_level": complexity,
             "estimated_time": time_estimates[complexity],
             "key_challenges": complexity_factors if complexity_factors else ["עמידה בדרישות בסיסיות"]

@@ -299,6 +299,244 @@ header p {
 
 .priority-high { background-color: #e74c3c; color: white; }
 .priority-medium { background-color: #f39c12; color: white; }
+
+/* Budget section styles */
+.budget-category {
+    margin-bottom: 20px;
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    border-right: 4px solid #667eea;
+}
+
+.budget-category h5 {
+    color: #667eea;
+    margin-bottom: 10px;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.budget-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.budget-list li {
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f0f0;
+    color: #555;
+}
+
+.budget-list li:last-child {
+    border-bottom: none;
+}
+
+.budget-list li::before {
+    content: "• ";
+    color: #667eea;
+    font-weight: bold;
+    margin-left: 10px;
+}
+
+.budget-note {
+    background: #e8f4fd;
+    padding: 12px;
+    border-radius: 6px;
+    border-right: 3px solid #3498db;
+    margin-top: 15px;
+}
+
+.budget-note p {
+    margin: 0;
+    color: #2c3e50;
+    font-size: 0.9rem;
+}
+
+/* Show More Controls Container */
+.show-more-controls {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    align-items: center;
+    margin: 24px 0;
+    flex-wrap: wrap;
+    padding: 0 16px;
+}
+
+/* Base button styling */
+.show-more-btn,
+.show-all-btn,
+.show-less-btn {
+    position: relative;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    white-space: nowrap;
+    text-decoration: none;
+    outline: none;
+    overflow: hidden;
+    backdrop-filter: blur(10px);
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+/* Show More Button - Primary Action */
+.show-more-btn {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    color: white;
+    box-shadow: 
+        0 4px 14px 0 rgba(79, 70, 229, 0.25),
+        0 2px 4px 0 rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.show-more-btn:hover {
+    transform: translateY(-1px) scale(1.02);
+    box-shadow: 
+        0 8px 25px 0 rgba(79, 70, 229, 0.35),
+        0 4px 8px 0 rgba(0, 0, 0, 0.15);
+    background: linear-gradient(135deg, #5b52f0 0%, #8b46f5 100%);
+}
+
+.show-more-btn:active {
+    transform: translateY(0) scale(1);
+    transition: all 0.1s ease;
+}
+
+/* Show All Button - Secondary Action */
+.show-all-btn {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    box-shadow: 
+        0 4px 14px 0 rgba(16, 185, 129, 0.25),
+        0 2px 4px 0 rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+}
+
+.show-all-btn:hover {
+    transform: translateY(-1px) scale(1.02);
+    background: linear-gradient(135deg, #14c085 0%, #0d9e6d 100%);
+    box-shadow: 
+        0 8px 25px 0 rgba(16, 185, 129, 0.35),
+        0 4px 8px 0 rgba(0, 0, 0, 0.15);
+}
+
+.show-all-btn:active {
+    transform: translateY(0) scale(1);
+    transition: all 0.1s ease;
+}
+
+/* Show Less Button - Subtle Action */
+.show-less-btn {
+    background: rgba(107, 114, 128, 0.1);
+    color: #6b7280;
+    box-shadow: 
+        0 2px 8px 0 rgba(107, 114, 128, 0.1),
+        0 1px 3px 0 rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(107, 114, 128, 0.2);
+    backdrop-filter: blur(5px);
+}
+
+.show-less-btn:hover {
+    transform: translateY(-1px) scale(1.02);
+    background: rgba(107, 114, 128, 0.15);
+    color: #4b5563;
+    border-color: rgba(107, 114, 128, 0.3);
+    box-shadow: 
+        0 6px 20px 0 rgba(107, 114, 128, 0.15),
+        0 3px 6px 0 rgba(0, 0, 0, 0.1);
+}
+
+.show-less-btn:active {
+    transform: translateY(0) scale(1);
+    transition: all 0.1s ease;
+}
+
+/* Focus states for accessibility */
+.show-more-btn:focus-visible,
+.show-all-btn:focus-visible,
+.show-less-btn:focus-visible {
+    outline: 2px solid #4f46e5;
+    outline-offset: 2px;
+}
+
+/* Loading state (optional enhancement) */
+.show-more-btn:disabled,
+.show-all-btn:disabled,
+.show-less-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Modern glass morphism effect for dark backgrounds */
+@media (prefers-color-scheme: dark) {
+    .show-all-btn {
+        background: linear-gradient(135deg, #047857 0%, #065f46 100%);
+        color: #d1fae5;
+        border-color: rgba(16, 185, 129, 0.3);
+    }
+    
+    .show-all-btn:hover {
+        background: linear-gradient(135deg, #059669 0%, #047857 100%);
+        color: #ecfdf5;
+        border-color: rgba(16, 185, 129, 0.5);
+    }
+    
+    .show-less-btn {
+        background: rgba(75, 85, 99, 0.2);
+        color: #9ca3af;
+        border-color: rgba(75, 85, 99, 0.3);
+    }
+    
+    .show-less-btn:hover {
+        background: rgba(75, 85, 99, 0.3);
+        color: #d1d5db;
+    }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .show-more-controls {
+        flex-direction: column;
+        gap: 10px;
+        margin: 20px 0;
+    }
+    
+    .show-more-btn,
+    .show-all-btn,
+    .show-less-btn {
+        width: 100%;
+        max-width: 320px;
+        padding: 14px 24px;
+        font-size: 0.95rem;
+        min-height: 48px;
+    }
+}
+
+/* Extra small screens */
+@media (max-width: 480px) {
+    .show-more-controls {
+        padding: 0 12px;
+    }
+    
+    .show-more-btn,
+    .show-all-btn,
+    .show-less-btn {
+        max-width: 100%;
+        font-size: 0.9rem;
+    }
+}
 .priority-low { background-color: #27ae60; color: white; }
 
 .impact-badge {

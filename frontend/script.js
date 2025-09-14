@@ -115,6 +115,12 @@ function setLoadingState(isLoading) {
 function displayResults(data) {
     hideError();
     
+    // Reset pagination counters on new results
+    checklistShowCount = PAGE_SIZE;
+    actionsShowCount = PAGE_SIZE;
+    risksShowCount = PAGE_SIZE;
+    tipsShowCount = PAGE_SIZE;
+
     // Display summary
     displaySummary(data.summary);
     
@@ -167,7 +173,14 @@ function displaySummary(summary) {
     `;
 }
 
-// Display checklist section
+// Global state for pagination (per section)
+const PAGE_SIZE = 10;
+let checklistShowCount = PAGE_SIZE;
+let actionsShowCount = PAGE_SIZE;
+let risksShowCount = PAGE_SIZE;
+let tipsShowCount = PAGE_SIZE;
+
+// Display checklist section with show more functionality
 function displayChecklist(checklist) {
     const checklistContent = document.getElementById('checklistContent');
     
@@ -176,15 +189,113 @@ function displayChecklist(checklist) {
         return;
     }
     
-    const checklistHTML = checklist.map(item => `
-        <div class="checklist-item">
-            <div class="checklist-category">${item.category}</div>
-            <h4>${item.title}</h4>
-            <div class="checklist-note">${item.note || ''}</div>
-        </div>
-    `).join('');
+    const LIMIT = checklistShowCount;
+    const itemsToShow = checklist.slice(0, LIMIT);
     
-    checklistContent.innerHTML = checklistHTML;
+    const checklistHTML = itemsToShow.map(item => {
+        // Filter out technical notes that shouldn't be shown to users
+        let note = item.note || '';
+        if (note.includes('מחולץ מקובץ Word') || note.includes('מחולץ מקובץ PDF')) {
+            note = ''; // Remove technical extraction notes
+        }
+        
+        return `
+            <div class="checklist-item">
+                <div class="checklist-category">${item.category}</div>
+                <h4>${item.title}</h4>
+                ${note ? `<div class="checklist-note">${note}</div>` : ''}
+            </div>
+        `;
+    }).join('');
+    
+    let showMoreButton = '';
+    if (checklist.length > LIMIT) {
+        const remaining = checklist.length - LIMIT;
+        const nextBatch = Math.min(PAGE_SIZE, remaining);
+        showMoreButton = `
+            <div class="show-more-controls">
+                <button onclick="showMoreChecklist()" class="show-more-btn">
+                    הצג עוד ${nextBatch} (מתוך ${remaining} נוספים) ⬇️
+                </button>
+                <button onclick="showAllChecklist()" class="show-all-btn">
+                    הצג הכל
+                </button>
+            </div>
+        `;
+    } else if (LIMIT > PAGE_SIZE) {
+        showMoreButton = `
+            <div class="show-more-controls">
+                <button onclick="showLessChecklist()" class="show-less-btn">
+                    הצג פחות ⬆️
+                </button>
+            </div>
+        `;
+    }
+    
+    checklistContent.innerHTML = checklistHTML + showMoreButton;
+    
+    // Store globally for toggle function
+    window.currentChecklist = checklist;
+}
+
+function showMoreChecklist() {
+    checklistShowCount = Math.min(checklistShowCount + PAGE_SIZE, window.currentChecklist.length);
+    displayChecklist(window.currentChecklist);
+}
+
+function showAllChecklist() {
+    checklistShowCount = window.currentChecklist.length;
+    displayChecklist(window.currentChecklist);
+}
+
+function showLessChecklist() {
+    checklistShowCount = PAGE_SIZE;
+    displayChecklist(window.currentChecklist);
+}
+
+function showMoreActions() {
+    actionsShowCount = Math.min(actionsShowCount + PAGE_SIZE, (window.currentActions || []).length);
+    displayAIReport(window.currentAIReport);
+}
+
+function showAllActions() {
+    actionsShowCount = (window.currentActions || []).length;
+    displayAIReport(window.currentAIReport);
+}
+
+function showLessActions() {
+    actionsShowCount = PAGE_SIZE;
+    displayAIReport(window.currentAIReport);
+}
+
+function showMoreRisks() {
+    risksShowCount = Math.min(risksShowCount + PAGE_SIZE, (window.currentAIReport?.potential_risks || []).length);
+    displayAIReport(window.currentAIReport);
+}
+
+function showAllRisks() {
+    risksShowCount = (window.currentAIReport?.potential_risks || []).length;
+    displayAIReport(window.currentAIReport);
+}
+
+function showLessRisks() {
+    risksShowCount = PAGE_SIZE;
+    displayAIReport(window.currentAIReport);
+}
+
+function showMoreTips() {
+    tipsShowCount = Math.min(tipsShowCount + PAGE_SIZE, (window.currentAIReport?.tips || []).length);
+    displayAIReport(window.currentAIReport);
+}
+
+function showAllTips() {
+    tipsShowCount = (window.currentAIReport?.tips || []).length;
+    displayAIReport(window.currentAIReport);
+}
+
+function showLessTips() {
+    tipsShowCount = PAGE_SIZE;
+    displayAIReport(window.currentAIReport);
 }
 
 // Display AI report section
@@ -215,89 +326,181 @@ function displayAIReport(aiReport) {
         `;
     }
     
-    // Actions section
+    // Actions section with show more functionality
     if (aiReport.actions && aiReport.actions.length > 0) {
+        const ACTIONS_LIMIT = actionsShowCount;
+        const actionsToShow = aiReport.actions.slice(0, ACTIONS_LIMIT);
+        
+        let actionsHTML = actionsToShow.map(action => `
+            <div class="action-item">
+                <div class="priority-badge priority-${action.priority || 'medium'}">
+                    עדיפות: ${getPriorityText(action.priority)}
+                </div>
+                <h5>${action.title}</h5>
+                <p><strong>קטגוריה:</strong> ${action.category || 'כללי'}</p>
+                ${action.required_professionals && action.required_professionals.length > 0 ? 
+                    `<p><strong>אנשי מקצוע נדרשים:</strong> ${action.required_professionals.join(', ')}</p>` : ''}
+                ${action.estimated_cost_range ? 
+                    `<p><strong>טווח עלויות:</strong> ${action.estimated_cost_range}</p>` : ''}
+                <p>${action.explanation || ''}</p>
+            </div>
+        `).join('');
+        
+        // Add show more button if needed
+        if (aiReport.actions.length > ACTIONS_LIMIT) {
+            const remaining = aiReport.actions.length - ACTIONS_LIMIT;
+            const nextBatch = Math.min(PAGE_SIZE, remaining);
+            actionsHTML += `
+                <div class="show-more-controls">
+                    <button onclick="showMoreActions()" class="show-more-btn">
+                        הצג עוד ${nextBatch} (מתוך ${remaining} נוספים) ⬇️
+                    </button>
+                    <button onclick="showAllActions()" class="show-all-btn">
+                        הצג הכל
+                    </button>
+                </div>
+            `;
+        } else if (ACTIONS_LIMIT > PAGE_SIZE) {
+            actionsHTML += `
+                <div class="show-more-controls">
+                    <button onclick="showLessActions()" class="show-less-btn">
+                        הצג פחות ⬆️
+                    </button>
+                </div>
+            `;
+        }
+        
         html += `
             <div class="ai-section">
                 <h4>📋 פעולות נדרשות</h4>
-                ${aiReport.actions.map(action => `
-                    <div class="action-item">
-                        <div class="priority-badge priority-${action.priority || 'medium'}">
-                            עדיפות: ${getPriorityText(action.priority)}
-                        </div>
-                        <h5>${action.title}</h5>
-                        <p><strong>קטגוריה:</strong> ${action.category || 'כללי'}</p>
-                        ${action.required_professionals && action.required_professionals.length > 0 ? 
-                            `<p><strong>אנשי מקצוע נדרשים:</strong> ${action.required_professionals.join(', ')}</p>` : ''}
-                        ${action.estimated_cost_range ? 
-                            `<p><strong>טווח עלויות:</strong> ${action.estimated_cost_range}</p>` : ''}
-                        <p>${action.explanation || ''}</p>
-                    </div>
-                `).join('')}
+                ${actionsHTML}
             </div>
         `;
+        
+        // Store globally for toggle function
+        window.currentActions = aiReport.actions;
     }
     
-    // Risks section
+    // Risks section with show more functionality
     if (aiReport.potential_risks && aiReport.potential_risks.length > 0) {
+        const RISKS_LIMIT = risksShowCount;
+        const risksToShow = aiReport.potential_risks.slice(0, RISKS_LIMIT);
+        
+        let risksHTML = risksToShow.map(risk => `
+            <div class="risk-item">
+                <div class="impact-badge impact-${risk.impact || 'medium'}">
+                    השפעה: ${getImpactText(risk.impact)}
+                </div>
+                <h5>${risk.risk_type || 'סיכון כללי'}</h5>
+                <p><strong>תיאור:</strong> ${risk.description}</p>
+                <p><strong>דרכי התמודדות:</strong> ${risk.mitigation}</p>
+            </div>
+        `).join('');
+        
+        // Add show more button for risks
+        if (aiReport.potential_risks.length > RISKS_LIMIT) {
+            const remaining = aiReport.potential_risks.length - RISKS_LIMIT;
+            const nextBatch = Math.min(PAGE_SIZE, remaining);
+            risksHTML += `
+                <div class="show-more-controls">
+                    <button onclick="showMoreRisks()" class="show-more-btn">
+                        הצג עוד ${nextBatch} (מתוך ${remaining} נוספים) ⬇️
+                    </button>
+                    <button onclick="showAllRisks()" class="show-all-btn">
+                        הצג הכל
+                    </button>
+                </div>
+            `;
+        } else if (RISKS_LIMIT > PAGE_SIZE) {
+            risksHTML += `
+                <div class="show-more-controls">
+                    <button onclick="showLessRisks()" class="show-less-btn">
+                        הצג פחות ⬆️
+                    </button>
+                </div>
+            `;
+        }
+        
         html += `
             <div class="ai-section">
                 <h4>⚠️ סיכונים פוטנציאליים</h4>
-                ${aiReport.potential_risks.map(risk => `
-                    <div class="risk-item">
-                        <div class="impact-badge impact-${risk.impact || 'medium'}">
-                            השפעה: ${getImpactText(risk.impact)}
-                        </div>
-                        <h5>${risk.risk_type || 'סיכון כללי'}</h5>
-                        <p><strong>תיאור:</strong> ${risk.description}</p>
-                        <p><strong>דרכי התמודדות:</strong> ${risk.mitigation}</p>
-                    </div>
-                `).join('')}
+                ${risksHTML}
             </div>
         `;
     }
     
-    // Tips section
+    // Tips section with show more functionality
     if (aiReport.tips && aiReport.tips.length > 0) {
+        const TIPS_LIMIT = tipsShowCount;
+        const tipsToShow = aiReport.tips.slice(0, TIPS_LIMIT);
+        
+        let tipsHTML = tipsToShow.map(tip => `
+            <div class="tip-item">
+                <h5>${tip.category || 'טיפ כללי'}</h5>
+                <p><strong>טיפ:</strong> ${tip.tip}</p>
+                <p><strong>תועלת:</strong> ${tip.benefit}</p>
+            </div>
+        `).join('');
+        
+        // Add show more button for tips
+        if (aiReport.tips.length > TIPS_LIMIT) {
+            const remaining = aiReport.tips.length - TIPS_LIMIT;
+            const nextBatch = Math.min(PAGE_SIZE, remaining);
+            tipsHTML += `
+                <div class="show-more-controls">
+                    <button onclick="showMoreTips()" class="show-more-btn">
+                        הצג עוד ${nextBatch} (מתוך ${remaining} נוספים) ⬇️
+                    </button>
+                    <button onclick="showAllTips()" class="show-all-btn">
+                        הצג הכל
+                    </button>
+                </div>
+            `;
+        } else if (TIPS_LIMIT > PAGE_SIZE) {
+            tipsHTML += `
+                <div class="show-more-controls">
+                    <button onclick="showLessTips()" class="show-less-btn">
+                        הצג פחות ⬆️
+                    </button>
+                </div>
+            `;
+        }
+        
         html += `
             <div class="ai-section">
                 <h4>💡 טיפים מועילים</h4>
-                ${aiReport.tips.map(tip => `
-                    <div class="tip-item">
-                        <h5>${tip.category || 'טיפ כללי'}</h5>
-                        <p><strong>טיפ:</strong> ${tip.tip}</p>
-                        <p><strong>תועלת:</strong> ${tip.benefit}</p>
-                    </div>
-                `).join('')}
+                ${tipsHTML}
             </div>
         `;
     }
     
-    // Budget planning section - show costs from actions and budget planning
-    if ((aiReport.actions && aiReport.actions.length > 0) || aiReport.budget_planning) {
+    // Budget planning section - simplified and cleaner
+    if (aiReport.budget_planning) {
         html += `
             <div class="ai-section">
                 <h4>💰 תכנון תקציב</h4>
                 
-                ${aiReport.actions && aiReport.actions.length > 0 ? 
-                    `<p><strong>עלויות משוערות לפי פעולות נדרשות:</strong></p>
-                     <ul>
-                        ${aiReport.actions.map(action => 
-                            `<li><strong>${action.title}</strong>: ${action.estimated_cost_range || 'מחיר לא צוין'}</li>`
-                        ).join('')}
-                     </ul>` : ''}
+                ${aiReport.budget_planning.fixed_costs && aiReport.budget_planning.fixed_costs.length > 0 ? 
+                    `<div class="budget-category">
+                        <h5>💵 עלויות חד פעמיות</h5>
+                        <ul class="budget-list">${aiReport.budget_planning.fixed_costs.map(cost => `<li>${cost}</li>`).join('')}</ul>
+                    </div>` : ''}
                 
-                ${aiReport.budget_planning && aiReport.budget_planning.fixed_costs && aiReport.budget_planning.fixed_costs.length > 0 ? 
-                    `<p><strong>עלויות חד פעמיות:</strong></p>
-                     <ul>${aiReport.budget_planning.fixed_costs.map(cost => `<li>${cost}</li>`).join('')}</ul>` : ''}
+                ${aiReport.budget_planning.recurring_costs && aiReport.budget_planning.recurring_costs.length > 0 ? 
+                    `<div class="budget-category">
+                        <h5>🔄 עלויות שוטפות</h5>
+                        <ul class="budget-list">${aiReport.budget_planning.recurring_costs.map(cost => `<li>${cost}</li>`).join('')}</ul>
+                    </div>` : ''}
                 
-                ${aiReport.budget_planning && aiReport.budget_planning.recurring_costs && aiReport.budget_planning.recurring_costs.length > 0 ? 
-                    `<p><strong>עלויות שוטפות:</strong></p>
-                     <ul>${aiReport.budget_planning.recurring_costs.map(cost => `<li>${cost}</li>`).join('')}</ul>` : ''}
+                ${aiReport.budget_planning.optional_costs && aiReport.budget_planning.optional_costs.length > 0 ? 
+                    `<div class="budget-category">
+                        <h5>⭐ עלויות אופציונליות</h5>
+                        <ul class="budget-list">${aiReport.budget_planning.optional_costs.map(cost => `<li>${cost}</li>`).join('')}</ul>
+                    </div>` : ''}
                 
-                ${aiReport.budget_planning && aiReport.budget_planning.optional_costs && aiReport.budget_planning.optional_costs.length > 0 ? 
-                    `<p><strong>עלויות אופציונליות:</strong></p>
-                     <ul>${aiReport.budget_planning.optional_costs.map(cost => `<li>${cost}</li>`).join('')}</ul>` : ''}
+                <div class="budget-note">
+                    <p><strong>💡 הערה:</strong> המחירים המדויקים ייקבעו לפי הצעות מחיר ממומחים מוסמכים</p>
+                </div>
             </div>
         `;
     }
@@ -315,6 +518,9 @@ function displayAIReport(aiReport) {
     }
     
     aiReportContent.innerHTML = html;
+    
+    // Store globally for toggle functions
+    window.currentAIReport = aiReport;
 }
 
 // Helper functions for text conversion

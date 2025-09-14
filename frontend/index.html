@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>מערכת הערכת רישוי עסקים</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=20250914-4">
 </head>
 <body>
     <div class="container">
@@ -88,11 +88,11 @@
         </main>
     </div>
 
-    <!-- Load configuration first -->
-    <script src="client_config.js"></script>
-    <!-- Load service layer -->
-    <script src="service.js"></script>
-    <!-- Load main application -->
-    <script src="script.js"></script>
+    <!-- Load configuration first (cache-bust) -->
+    <script src="client_config.js?v=20250914-3"></script>
+    <!-- Load service layer (cache-bust) -->
+    <script src="service.js?v=20250914-3"></script>
+    <!-- Load main application (cache-bust) -->
+    <script src="script.js?v=20250914-3"></script>
 </body>
 </html>
