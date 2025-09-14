@@ -31,7 +31,12 @@ class ApiService {
             });
 
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                // Surface server-provided error message when available (e.g., AI required)
+                const serverMessage = data && (data.error || data.message);
+                if (serverMessage) {
+                    throw new Error(serverMessage);
+                }
+                throw new Error(`שגיאה בתקשורת עם השרת (סטטוס ${response.status}).`);
             }
 
             const data = await response.json();

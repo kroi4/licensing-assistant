@@ -1,8 +1,14 @@
-﻿# Python cache files
+﻿# Environment variables
+.env
+.env.local
+.env.development
+.env.production
+
+# Python
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
+*.py[cod]
+*$py.class
+*.so
 .Python
 build/
 develop-eggs/
@@ -21,28 +27,23 @@ wheels/
 *.egg
 MANIFEST
 
-# Virtual environment
-.venv/
+# Virtual environments
 venv/
-ENV/
 env/
+ENV/
+env.bak/
+venv.bak/
 
-# IDE files
+# IDE
 .vscode/
 .idea/
 *.swp
 *.swo
+*~
 
-# OS files
+# OS
 .DS_Store
 Thumbs.db
-
-# Environment variables
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
 
 # Logs
 *.log

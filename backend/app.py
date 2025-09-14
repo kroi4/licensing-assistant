@@ -219,29 +219,27 @@ def evaluate_restaurant(payload: Dict[str, Any]) -> Dict[str, Any]:
         "checklist": matched_rules
     }
 
-    # 4. הפקת דו"ח AI
+    # 4. הפקת דו"ח AI - רק אם יש חיבור אמיתי לChatGPT
+    has_real_ai = False
+    
     try:
         ai_report = generate_ai_report(payload, matched_rules)
-        result['ai_report'] = ai_report
+        if ai_report is not None:
+            # יש דוח AI אמיתי מChatGPT
+            has_real_ai = True
+            result['ai_report'] = ai_report
+            print("✅ דוח AI נוצר בהצלחה מChatGPT")
+        else:
+            print("❌ אין חיבור לChatGPT - לא יוצג דוח AI")
+            
     except Exception as e:
-        print(f"AI error: {str(e)}")
-        result['ai_report'] = {
-            "summary": {
-                "assessment": "לא ניתן היה ליצור דוח AI",
-                "complexity_level": "unknown",
-                "estimated_time": "לא ניתן להעריך",
-                "key_challenges": ["תקלה בשירות ה-AI"]
-            },
-            "actions": [],
-            "potential_risks": [],
-            "tips": [],
-            "open_questions": ["נא לפנות לתמיכה"],
-            "budget_planning": {
-                "fixed_costs": [],
-                "recurring_costs": [],
-                "optional_costs": []
-            }
-        }
+        print(f"❌ שגיאה בחיבור לChatGPT: {str(e)}")
+    
+    # הוסף מידע על מצב ה-AI האמיתי
+    result['has_real_ai'] = has_real_ai
+    if not has_real_ai:
+        result['ai_status'] = "אין חיבור לChatGPT - דוח AI לא זמין"
+        # אל תוסיף ai_report בכלל כשאין AI אמיתי!
 
     return result
 
@@ -285,11 +283,22 @@ def assess():
         print(f"Received data: {data}")
         
         result = evaluate_restaurant(data)
-        
-        # Log the result for debugging
-        print(f"Evaluation result: {result}")
-        
-        return jsonify(result)
+
+        # Enforce AI-only: if no real AI report, return 503 and do not return fallback content
+        if not result.get('has_real_ai'):
+            return jsonify({
+                "error": "המערכת פועלת רק עם דוח AI מלא. אנא וודא שמפתח OPENAI_API_KEY מוגדר נכון והפעל מחדש את השרת.",
+                "details": "המערכת לא מחזירה תשובות חלקיות - רק דוחות מלאים עם ניתוח AI מקצועי"
+            }), 503
+
+        # Return the AI result including the has_real_ai flag for frontend logic
+        safe_result = {
+            "summary": result.get("summary"),
+            "checklist": result.get("checklist"),
+            "ai_report": result.get("ai_report"),
+            "has_real_ai": result.get("has_real_ai", False)
+        }
+        return jsonify(safe_result)
         
     except Exception as e:
         print(f"Error in assess endpoint: {str(e)}")

@@ -1,14 +1,14 @@
 import os
 import json
-from dotenv import load_dotenv
-import openai
+from dotenv import load_dotenv, find_dotenv
+from openai import OpenAI
 from typing import Dict, List, Any
 
-# טעינת משתני הסביבה מקובץ .env
-load_dotenv()
+# טעינת משתני הסביבה מקובץ .env - חיפוש אוטומטי למעלה בהיררכיה
+load_dotenv(find_dotenv())
 
-# יצירת לקוח OpenAI
-openai.api_key = os.getenv('OPENAI_API_KEY')
+# יצירת לקוח OpenAI - ייקח את המפתח אוטומטית מ-OPENAI_API_KEY
+client = OpenAI()
 
 
 def create_basic_report(business_data: Dict[str, Any], matching_rules: List[Dict[str, Any]]) -> Dict[str, Any]:
@@ -252,29 +252,39 @@ def generate_ai_report(business_data: Dict[str, Any], matching_rules: List[Dict[
     
     # Check if OpenAI API key is available
     api_key = os.getenv('OPENAI_API_KEY')
+    print("🔑 API Key loaded:", bool(api_key))
     if not api_key or api_key == 'your_openai_api_key_here':
-        print("OpenAI API key not configured - returning basic report")
-        return create_basic_report(business_data, matching_rules)
+        print("❌ אין חיבור ל-ChatGPT - לא יוצג דוח AI")
+        return None  # אין AI - אין דוח
     
     try:
-        print("Starting AI report generation...")
+        print(f"🤖 Starting AI report generation for business: {business_data['area']}m², {business_data['seats']} seats, features: {business_data['features']}")
         
         # יצירת רשימת דרישות מפורטת
         rules_text = "\n".join([
             f"- {rule['category']}: {rule['title']}\n  {rule.get('note', '')}"
             for rule in matching_rules
         ])
+        print(f"📋 Processing {len(matching_rules)} regulatory rules")
 
-        prompt = f"""אתה יועץ בכיר לרישוי עסקים בישראל. נתח את המידע הבא ותן המלצות מעשיות וקונקרטיות.
+        prompt = f"""אתה יועץ מומחה לרישוי עסקים בישראל עם 15 שנות ניסיון. תפקידך לנתח את פרטי העסק ולהכין דוח מקצועי ומותאם אישית.
 
-פרטי העסק:
-- סוג: מסעדה/בית אוכל
+🏢 **פרטי העסק:**
+- סוג: מסעדה/בית אוכל  
 - שטח: {business_data['area']} מ"ר
 - מקומות ישיבה: {business_data['seats']}
-- מאפיינים: {', '.join(business_data['features'])}
+- מאפיינים מיוחדים: {', '.join(business_data['features'])}
 
-דרישות רגולטוריות רלוונטיות:
+📋 **דרישות רגולטוריות רלוונטיות:**
 {rules_text}
+
+🎯 **משימתך:**
+צור דוח מקצועי המתאים בדיוק לעסק הזה, עם דגש על:
+1. ניתוח מעמיק של המורכבות והאתגרים
+2. פעולות קונקרטיות עם לוחות זמנים ועלויות מדויקות
+3. זיהוי סיכונים ודרכי מניעה
+4. טיפים מעשיים לחיסכון בזמן ובעלות
+5. תכנון תקציב מפורט
 
 נדרש להחזיר JSON במבנה המדויק הבא:
 {{
@@ -312,32 +322,62 @@ def generate_ai_report(business_data: Dict[str, Any], matching_rules: List[Dict[
     ],
     "open_questions": ["שאלות שצריך לברר - רק אם באמת חסר מידע מהותי"],
     "budget_planning": {{
-        "fixed_costs": ["עלויות חד פעמיות צפויות"],
-        "recurring_costs": ["עלויות שוטפות/תקופתיות"],
-        "optional_costs": ["עלויות אופציונליות לשיפור/ייעול"]
+        "fixed_costs": ["התקנת מערכת גז: 15,000-25,000 ש״ח", "ייעוץ רישוי עסק: 3,000-5,000 ש״ח", "אישורי בטיחות: 2,000-4,000 ש״ח"],
+        "recurring_costs": ["תחזוקה שנתית למערכות בטיחות: 2,000-4,000 ש״ח", "ביטוח עסקי: 3,000-8,000 ש״ח לשנה", "אגרות רישוי שנתיות: 500-1,500 ש״ח"],
+        "optional_costs": ["שדרוג ציוד מטבח: 20,000-50,000 ש״ח", "מערכת אזעקה מתקדמת: 5,000-10,000 ש״ח", "פרסום ושיווק: 5,000-15,000 ש״ח"]
     }}
 }}
 
 חשוב:
 1. כל הפעולות והטיפים חייבים להיות ספציפיים, מדידים וישימים
 2. יש לתעדף פעולות לפי דחיפות וחשיבות
-3. עלויות צריכות להיות מציאותיות ומבוססות על מחירי השוק
+3. עלויות צריכות להיות מציאותיות ומבוססות על מחירי השוק הישראלי
 4. אין להמציא דרישות שלא מופיעות בכללים
-5. יש להתייחס לכל המאפיינים המיוחדים של העסק"""
+5. יש להתייחס לכל המאפיינים המיוחדים של העסק
+6. **חובה לכלול מחירים ספציפיים בש״ח בכל פריט בתכנון התקציב - לא רק תיאורים כלליים!**
+7. השתמש בטווחי מחירים מציאותיים (למשל: "התקנת מערכת גז: 15,000-25,000 ש״ח")"""
 
-        print("Sending request to OpenAI...")
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
+        print("🚀 Sending request to OpenAI...")
+        print(f"📝 Prompt length: {len(prompt)} characters")
+        
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
             messages=[
-                {"role": "system", "content": "אתה יועץ מומחה לרישוי עסקים בישראל. ענה ב-JSON בלבד."},
+                {"role": "system", "content": "אתה יועץ מומחה לרישוי עסקים בישראל עם ניסיון רב. תחזיר תמיד JSON תקין בלבד, ללא טקסט נוסף."},
                 {"role": "user", "content": prompt}
-            ]
+            ],
+            temperature=0.7,
+            max_tokens=3000
         )
-        print("Got response from OpenAI")
+        print("✅ Got response from OpenAI")
+        print(f"💰 Token usage - Prompt: {response.usage.prompt_tokens}, Completion: {response.usage.completion_tokens}, Total: {response.usage.total_tokens}")
         
         try:
             print("Parsing response...")
-            ai_response = json.loads(response.choices[0].message['content'])
+            raw_content = response.choices[0].message.content
+            print(f"🔍 Raw AI response (first 500 chars): {raw_content[:500]}...")
+            
+            # Clean up common JSON issues from AI responses
+            cleaned_content = raw_content.strip()
+            
+            # Fix common Hebrew text issues that break JSON
+            import re
+            # Replace all problematic quotes in Hebrew text with safe alternatives
+            cleaned_content = re.sub(r'(\w)"(\w)', r'\1״\2', cleaned_content)  # Hebrew quotes between letters
+            cleaned_content = cleaned_content.replace('מ"ר', 'מ״ר')  # Specific cases
+            cleaned_content = cleaned_content.replace('ת"י', 'ת״י')  
+            cleaned_content = cleaned_content.replace('גפ"מ', 'גפ״מ')
+            cleaned_content = cleaned_content.replace('ש"ח', 'ש״ח')  # Shekels
+            cleaned_content = cleaned_content.replace('ק"ג', 'ק״ג')  # Kilograms
+            
+            # Remove any markdown code blocks if present
+            if cleaned_content.startswith('```json'):
+                cleaned_content = cleaned_content.replace('```json', '').replace('```', '').strip()
+            elif cleaned_content.startswith('```'):
+                cleaned_content = cleaned_content.replace('```', '').strip()
+            
+            print(f"🧹 Cleaned content (first 500 chars): {cleaned_content[:500]}...")
+            ai_response = json.loads(cleaned_content)
             print("Response parsed successfully")
             
             # וידוא תקינות המבנה ומילוי ערכי ברירת מחדל אם צריך
@@ -402,8 +442,12 @@ def generate_ai_report(business_data: Dict[str, Any], matching_rules: List[Dict[
         }
     except Exception as e:
         error_message = str(e)
-        print(f"OpenAI API error: {error_message}")
+        print(f"❌ OpenAI API error: {error_message}")
+        
+        # Log more details for debugging
+        if hasattr(e, 'response'):
+            print(f"🔍 API Response status: {e.response.status_code if hasattr(e.response, 'status_code') else 'Unknown'}")
         
         # Return the basic report instead of showing technical errors to users
-        print("Falling back to basic report due to AI error")
-        return create_basic_report(business_data, matching_rules)
+        print("❌ שגיאה בחיבור ל-ChatGPT - לא יוצג דוח AI")
+        return None  # אין AI - אין דוח

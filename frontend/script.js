@@ -127,9 +127,11 @@ function displayResults(data) {
     // Display checklist
     displayChecklist(data.checklist);
     
-    // Display AI report
-    if (data.ai_report) {
+    // Display AI report only if there's real AI integration
+    if (data.has_real_ai && data.ai_report) {
         displayAIReport(data.ai_report);
+    } else {
+        displayNoAIMessage(data.ai_status || "דוח AI לא זמין כרגע");
     }
     
     // Show results container
@@ -298,12 +300,34 @@ function showLessTips() {
     displayAIReport(window.currentAIReport);
 }
 
+// Display message when AI is not available
+function displayNoAIMessage(message) {
+    const aiReportContent = document.getElementById('aiReportContent');
+    
+    aiReportContent.innerHTML = `
+        <div class="no-ai-message">
+            <div class="ai-status-icon">🤖</div>
+            <h4>דוח AI לא זמין</h4>
+            <p>${message}</p>
+            <div class="ai-setup-help">
+                <p><strong>כדי לקבל דוח AI מותאם אישית:</strong></p>
+                <ol>
+                    <li>הגדר מפתח OpenAI API בקובץ <code>.env</code></li>
+                    <li>הוסף את השורה: <code>OPENAI_API_KEY=your_api_key_here</code></li>
+                    <li>אתחל מחדש את השרת</li>
+                </ol>
+                <p>לאחר ההגדרה תקבל ניתוח מעמיק ומותאם אישית עם המלצות פעולה, הערכת סיכונים וטיפים מעשיים.</p>
+            </div>
+        </div>
+    `;
+}
+
 // Display AI report section
 function displayAIReport(aiReport) {
     const aiReportContent = document.getElementById('aiReportContent');
     
     if (!aiReport) {
-        aiReportContent.innerHTML = '<p>דוח AI לא זמין כרגע.</p>';
+        displayNoAIMessage('דוח AI לא זמין כרגע.');
         return;
     }
     
