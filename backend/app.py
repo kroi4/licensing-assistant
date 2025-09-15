@@ -283,22 +283,11 @@ def assess():
         print(f"Received data: {data}")
         
         result = evaluate_restaurant(data)
-
-        # Enforce AI-only: if no real AI report, return 503 and do not return fallback content
-        if not result.get('has_real_ai'):
-            return jsonify({
-                "error": "המערכת פועלת רק עם דוח AI מלא. אנא וודא שמפתח OPENAI_API_KEY מוגדר נכון והפעל מחדש את השרת.",
-                "details": "המערכת לא מחזירה תשובות חלקיות - רק דוחות מלאים עם ניתוח AI מקצועי"
-            }), 503
-
-        # Return the AI result including the has_real_ai flag for frontend logic
-        safe_result = {
-            "summary": result.get("summary"),
-            "checklist": result.get("checklist"),
-            "ai_report": result.get("ai_report"),
-            "has_real_ai": result.get("has_real_ai", False)
-        }
-        return jsonify(safe_result)
+        
+        # Log the result for debugging
+        print(f"Evaluation result: {result}")
+        
+        return jsonify(result)
         
     except Exception as e:
         print(f"Error in assess endpoint: {str(e)}")
